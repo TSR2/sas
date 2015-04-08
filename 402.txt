@@ -1,0 +1,604 @@
+
+/*p140*/
+
+data data1;
+input id last$ first$ middle$ phone$ location$    ; 
+cards;
+5463 Olsen Mary K. 661-0012 R2342
+6574 Hogan Terence H. 661-3243 R4456
+7896 Bridges Georgina W. 661-8897 S2988
+4352 Anson Sanford  . 661-4432 S3412
+5674 Leach Archie G. 661-4328 S3533
+7902 Wilson Fran R. 661-8332 R4454
+0001 Singleton Adam O. 661-0980 R4457
+9786 Thompson Jack  . 661-6781 R2343
+;
+
+data data2;
+input id last$ first$ middle$ phone$ location$ ;
+cards;
+5463 Olsen Mary K. 661-0012 R2342
+6574 Hogan Terence H. 661-3243 R4456
+7896 Bridges Georgina W. 661-2231 S2987
+4352 Anson Sanford . 661-4432 S3412
+5674 Leach Archie G. 661-4328 S3533
+7902 Wilson Fran R. 661-8332 R4454
+0001 Singleton Adam O. 661-0980 R4457
+9786 Thompson John C. 661-6781 R2343
+2123 Chen Bill W. 661-8099 R4432
+;
+proc print data=data1;
+run;
+proc print data=data2;
+run;
+/*p140sql*/
+proc sql;
+select * from data2
+except 
+select * from data1
+;
+/*p140 dataset*/
+data data3;
+merge data2 (in=gg) data1 (in=rr);
+
+
+/*p142*/
+data data1;
+length Fullname $15;
+infile "C:\Users\MATH\Desktop\新增資料夾\data1.txt" dlm=",";
+input Fullname$ id AvgScore;
+run;
+
+proc print data=data1;
+run;
+
+
+data data2;
+infile "C:\Users\MATH\Desktop\新增資料夾\data2.txt" dlm=",";
+input  FirstName$ LastName$ id AvgScore ;
+;
+proc print data=data2;
+run;
+
+
+
+
+
+
+
+
+
+/*p142 dataset*/
+proc sort data=data1;
+by id;
+run;
+proc sort data=data2;
+by id;
+run;
+data data3;
+merge data2(in=rr)  data1(in=gg) ;
+by id;
+run;
+proc print  data=data3;
+run;
+
+
+/*p142sql*/
+
+
+
+
+
+
+
+/*p145*/
+data data1;
+input  LastName$ name$ City$ State$ ;
+cards;
+ Smith John Richmond Virginia
+ Johnson Mary Miami Florida
+ Smith W Richmond Virginia
+ Reed Sam Portland Oregon
+ Davis Karen Chicago Illinois
+ Davis Karen Chicago Illinois
+ Thompson Jennifer Houston Texas
+ Smith John Richmond Virginia
+ Johnson Mary Miami Florida
+;
+
+
+
+/*p145 dataset*/
+data data1;
+set data1;
+ppp=  LastName|| name|| City|| State;
+
+proc print data=data1;
+run;
+proc sort data=data1;
+by  ppp;
+run;
+data data2;
+set data1;
+by ppp;
+if first.ppp then do;
+count=0;
+end;
+count+1;
+if last.ppp then output;
+run;
+proc print data=data2;
+where count >1;
+run;
+
+
+/*p145sql*/
+proc sql;
+select *, count(*) as Count
+from data1
+group by LastName, name, City, State;
+having count(*) > 1;
+
+
+
+
+/*p144*/
+data data1;
+input a$ b$;
+cards;
+ NY YES
+ NY YES
+ NP YES
+ NF YES
+ NG YES
+ NG YES
+ NF NO
+ NY NO
+ NY NO
+ NC YES
+ NC NO
+;
+run;
+
+/*p144dataset*/
+
+proc sort data=data1;
+by b;
+run;
+
+proc freq data=data1;
+table a;
+by b;
+run;
+
+/*p144sql*/
+/*另建資料集*/
+proc sql;
+create table data2 as
+select b,count(*) as countb
+from data1
+group b;
+
+proc sql;
+select a,data1.b,count(a) as count ,
+calculated count/countb as Percent
+from data1,data2
+where data1.b=data2.b
+group by data1.b , data1.a;
+
+
+/*p144 不另建資料集*/
+proc sql;
+select a,data1.b, count(a) as count,
+calculated count/countb as Percent 
+from data1,
+(select b, count(b) as countb from data1
+group by b) as data2
+where data1.b=data2.b
+group by data1.b, data1.a;
+
+/*p147*/
+data data1;
+input obs id lastname$ name$ supervisor;
+cards;
+1 1001 Smith John 1002
+2 1002 Johnson Mary None
+3 1003 Reed Sam None
+4 1004 Davis Karen 1003
+5 1005 Thompson Jennifer 1002
+6 1006 Peterson George 1002
+7 1007 Jones Sue 1003
+8 1008 Murphy Janice 1003
+9 1009 Garcia Joe 1002
+;
+run;
+proc print data=data1;
+run;
+
+data data2;
+input obs id bosslastname$ bossname$ ;
+cards;
+1 1002 aa aa 
+2 1003 bb bb 
+;
+run;
+proc print data=data2;
+run;
+/*p147sql*/
+proc sql;
+select  data1.id, data1.lastname||data1.name as name, data1.supervisor,
+data2.bosslastname ||data2.bossname as boss
+from data1,data2
+where data1.supervisor=data2.id;
+/*p147dataset*/
+data data1;
+set data1;
+id1=supervisor;
+
+data data2;
+set data2;
+id1=id;
+proc sort data=data1;
+by id1;
+proc sort data=data2;
+by id1;
+
+data data3;
+merge data1 data2;
+by id1;
+if id1="" then delete;
+name=lastname||name;
+boss=bosslastname||bossname;
+run;
+proc print data=data3;
+var id name supervisor boss; 
+run;
+
+
+/*p149*/
+data data1;
+input  Obs Salesperson$ January February March;
+cards;
+1 Smith 1000 650 800
+2 Johnson 0 900 900
+3 Reed 1200 700 850
+4 Davis 1050 900 1000
+5 Thompson 750 850 1000
+6 Peterson 900 600 500
+7 Jones 800 900 1200
+8 Murphy 700 800 700
+9 Garcia 400 1200 1150
+;
+run;
+proc print data=data1;
+run;
+/*p149sql*/
+proc sql;
+select sum(January) as totalJanuary,
+sum(February) as totalFebruary,
+sum(March) as totalMarch,
+calculated totalJanuary+calculated totalFebruary+calculated totalMarch as total
+from data1;
+
+/*p149 dataset*/
+proc means data=data1 sum;
+var January February March;
+ods output summary=ff;
+run;
+
+proc print data=ff;
+run;
+data data1;
+set ff;
+sum=January_Sum+ February_Sum + March_Sum ;
+run;
+proc print data=data1;
+var  January_Sum  February_Sum  March_Sum  sum;
+run;
+
+
+/*p150*/
+
+data data1;
+input 
+Site$ Product$ Invoice$ InvoiceAmount InvoiceDate$ ;
+cards;
+V1009 VID010 V7679 598.5 980126
+V1019 VID010 V7688 598.5 980126
+V1032 VID005 V7771 1070 980309
+V1043 VID014 V7780 1070 980309
+V421 VID003 V7831 2000 980330
+V421 VID010 V7832 750 980330
+V570 VID003 V7762 2000 980302
+V659 VID003 V7730 1000 980223
+V783 VID003 V7815 750 980323
+V985 VID003 V7733 2500 980223
+V966 VID001 V5020 1167 980215
+V98 VID003 V7750 2000 980223
+;
+run;
+proc print data=data1;
+run;
+
+/*p150sql*/
+proc sql;
+title ’First Quarter Sales by Product’;
+select Product,
+sum(Jan) label="Jan",
+sum(Feb) label="Feb",
+sum(Mar) label="Mar"
+from (select Product,
+case
+when substr(InvoiceDate,3,2)="01" then
+InvoiceAmount end as Jan,
+case
+when substr(InvoiceDate,3,2)="02" then
+InvoiceAmount end as Feb,
+case
+when substr(InvoiceDate,3,2)="03" then
+InvoiceAmount end as Mar
+from data1)
+group by Product;
+
+proc sql;
+select Product,
+case
+when substr(InvoiceDate,3,2)="01" then
+InvoiceAmount end as Jan,
+case
+when substr(InvoiceDate,3,2)="02" then
+InvoiceAmount end as Feb,
+case
+when substr(InvoiceDate,3,2)="03" then
+InvoiceAmount end as Mar
+from data1;
+
+/*p150 dataset*/
+data data2(keep=Product Jan Feb Mar);
+set data1;
+if substr(InvoiceDate,3,2)="01" then
+Jan=InvoiceAmount ;
+if substr(InvoiceDate,3,2)="02" then
+Feb=InvoiceAmount;
+if substr(InvoiceDate,3,2)="03" then
+Mar=InvoiceAmount;
+ run;
+ proc print data=data2;
+ run;
+ proc sort data=data2;
+ by Product;
+ run;
+proc means data=data2 sum;
+by Product;
+run;
+
+/*p153*/
+data data1;
+input Project$ Hours Season$ ;
+cards;
+weeding 48 summer
+pruning 12 winter
+mowing 36 summer
+mulching 17 fall
+raking 24 fall
+raking 16 spring
+planting 8 spring
+planting 8 fall
+sweeping 3 winter
+edging 16 summer
+seeding 6 spring
+tilling 12 spring
+aerating 6 spring
+feeding 7 summer
+rolling 4 winter
+;
+run;
+
+/*p153sql*/
+proc sql;
+select *,case 
+when Season="spring" then 1
+when Season="summer" then 2
+when Season="fall" then 3
+when Season="winter" then 4 
+end as aa
+from data1
+order aa;
+
+/*p153 dataset*/
+data data2;
+set data1;
+if Season="spring" then aa=1;
+if Season="summer" then aa=2;
+if Season="fall" then aa=3;
+if Season="winter" then aa=4 ;
+run;
+proc sort data=data2;
+by aa;
+run;
+proc print data=data2;
+run;
+
+
+
+/*p156*/
+
+data data1;
+length Name1 $12;
+input Name1$ Name2$  Department$  Payrate Gadgets Whatnots ;
+cards;
+Lao Che M2 8 10193 1105
+Jack Colton U2 6 9994 2710
+Mickey Raymond M1 12 6103 1930
+Dean Proffit M2 11 3000 1999
+Antoinette Lily E1 20 2203 4610
+Sydney Wade E2 15 4205 3010
+Alan Traherne U2 4 5020 3000
+Elizabeth Bennett E1 16 17003 3003
+;
+
+proc print data=data1;
+run;
+/*p156dataset*/
+data data2;
+set data1;
+Name=Name1||Name2;
+if Gadgets>10000 then Payrate=Payrate+5;
+if (10000>Gadgets>5000) then do;
+	if (Department="E1" or "E2") then Payrate=Payrate+2;
+	else Payrate=Payrate+3;
+end;
+if (Whatnots>2000) then do;
+	if (Department="E2" or "M2" or "U2") then Payrate=Payrate+1;
+	else Payrate=Payrate+0.5;
+end;
+drop Name1 Name2;
+run;
+proc print data=data2;
+run;
+
+/*p156 sql*/
+proc sql;
+update data1
+	set Payrate=case
+					when Gadgets>10000 then 
+						Payrate+5
+					when Gadgets>5000 then
+						case 
+							when Department in ("E1","E2") then
+								Payrate+2
+							else
+								Payrate+3
+						end
+					else
+						Payrate
+				end;
+update data1
+	set Payrate=case
+					when Whatnots>2000 then
+						case
+							when Department in("E2", "M2" ,"U2") then
+								Payrate+1
+							else
+								Payrate+0.5
+						end
+					else
+						Payrate
+				end;
+proc print data=data1;
+run;
+
+
+
+
+/*p159*/
+data data1;
+input state$15. pop comma12.;
+cards;
+Texas 			20,851,820
+Georgia 		8,186,453
+Washington 		5,894,121
+Arizona 		5,130,632
+Alabama 		4,447,100
+Oklahoma 		3,450,654
+Connecticut 	3,405,565
+Iowa 			2,926,324
+West Virginia 	1,808,344
+Idaho 			1,293,953
+Maine 			1,274,923
+New Hampshire 	1,235,786
+North Dakota 	642,200
+Alaska 			626,932
+;
+proc print data=data1;
+run;
+
+data data2;
+length name $13.; 
+input name$ Capital$ Population Area Continent1$ Continent2$ Statehood date10. ;
+cards;
+Alabama Montgomery 4447100 52423 North America 14DEC1819
+Alaska Juneau 0 656400 North America 03JAN1959
+Arizona Phoenix 0 114000 North America 14FEB1912
+Arkansas Little  2447996 53200 North America 15JUN1836
+California Sacramento 31518948 163700 North America 09SEP1850
+Colorado Denver 3601298 104100 North America 01AUG1876
+Connecticut Hartford 0 5500 North America 09JAN1788
+Delaware Dover 707232 2500 North America 07DEC1787
+District  Washington 612907 100 North America 21FEB1871
+Florida Tallahassee 13814408 65800 North America 03MAR1845
+;
+/*p159sql*/
+proc print data=data2;
+format Statehood date.;
+run;
+
+
+proc sql;
+update data2
+set Population=(select pop from data1,data2 where data1.state=data2.name)
+where data2.name in (select state from data1);
+select * ,Statehood format=date9. from data2;
+
+
+/*p159dataset*/
+data data2;
+set data2;
+state=name;
+
+proc sort data=data1;
+by state;
+proc sort data=data2;
+by state;
+run;
+
+data data3;
+merge data1(in=aa)  data2(in=bb);
+by state;
+if bb=1;
+if pop ~= "." then Population=pop;
+Continent=Continent1||Continent2;
+drop state pop Continent1 Continent2;
+run;
+proc print data=data3;
+format Statehood date.;
+run;
+
+
+/*p163*/
+
+data data1;
+input City$ Country$&13-24  AvgHigh AvgLow;
+cards;
+Algiers 	Algeria 		90 45
+Amsterdam 	Netherlands 	70 33
+Athens 		Greece 			89 41
+Auckland 	New Zealand 	75 44
+Bangkok 	Thailand 		95 69
+Beijing 	China 			86 17
+Belgrade 	Yugoslavia 		80 29
+Berlin 		Germany 		75 25
+Bogota 		Colombia 		69 43
+Bombay 		India 			90 68
+;
+proc print data=data1;
+run;
+
+options fmtsearch=(sashelp.mapfmts);
+proc sql;
+create table extremetemps as
+select country, round((mean(avgHigh)-32)/1.8) as High,
+input(put(country,$glcsmn.), best.) as ID
+from data1
+where calculated id is not missing and country in
+(select name from data1 where continent=’Europe’)
+group by country;
+quit;
+proc gmap map=maps.europe data=extremetemps all;
+id id;
+block high / levels=3;
+title ’Average High Temperatures for European Countries’;
+title2 ’Degrees Celsius’
+run;
+quit;
+
